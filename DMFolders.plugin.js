@@ -8,6 +8,7 @@
  */
 
 const ITEM = '[data-list-item-id^="private-channels"]';
+const PIN_TOP = false; // true = keep Friends/Nitro/tabs pinned (can clash with custom themes)
 
 const BTN_STYLE = "padding:4px 10px;border-radius:6px;border:none;cursor:pointer;background:#5865f2;color:#ffffff;";
 const DANGER_STYLE = "padding:4px 10px;border-radius:6px;border:none;cursor:pointer;background:#da373c;color:#ffffff;";
@@ -441,7 +442,7 @@ module.exports = class DMFolders {
             row.style.display = show ? "" : "none";
         });
 
-        this.layout();
+        if (PIN_TOP) this.layout();
     }
 
     // ---------- the settings panel (the ⚙️ button) ----------
