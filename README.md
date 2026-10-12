@@ -17,6 +17,7 @@ These are not browser-style tabs. Each tab is a folder, and it filters your DM l
 - **Right-click a folder tab** to:
   - **Add DMs…**: pick from a list showing each person's profile picture and display name (your friend nickname is used if you set one).
   - **Rename**, **Duplicate folder** or **Delete folder**.
+- **Search when adding DMs**: find a chat by username, display name, or the nickname you gave a friend.
 - **Settings panel** (the ⚙️ next to the plugin) to create folders and manage which DMs are in each one.
 - **Remembers your last tab** when you restart Discord.
 - **Many folders? No problem.** The tab row scrolls sideways with a thin scrollbar or the mouse wheel.
