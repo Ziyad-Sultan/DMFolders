@@ -1,9 +1,10 @@
 /**
  * @name DMFolders
  * @author Ziyad Sultan
+ * @authorLink https://github.com/Ziyad-Sultan
  * @description Organize your DMs into folders with unread badges
- * @version 3.0.0
- * @source https://github.com/Ziyad-Sultan/DMFolders/
+ * @version 3.1.0
+ * @source https://github.com/Ziyad-Sultan/DMFolders
  */
 
 const ITEM = '[data-list-item-id^="private-channels"]';
@@ -24,7 +25,7 @@ module.exports = class DMFolders {
         this.panelEl = null;
         this.renderPanel = null;
 
-        // makes the scrollbar start right under the tabs
+        // scrollbar starts right under the tabs + thin horizontal scrollbar for the tab row
         this.pinned = new Set();
         const style = document.createElement("style");
         style.id = "dmf-style";
@@ -163,6 +164,22 @@ module.exports = class DMFolders {
         };
     }
 
+    // everything a DM can be searched by: nickname, display name, username (and group name)
+    getSearchText(id) {
+        const ChannelStore = BdApi.Webpack.getStore("ChannelStore");
+        const UserStore = BdApi.Webpack.getStore("UserStore");
+        const RelationshipStore = BdApi.Webpack.getStore("RelationshipStore");
+        const ch = ChannelStore.getChannel(id);
+        if (!ch) return "";
+
+        const parts = [ch.name];
+        (ch.recipients || []).forEach(uid => {
+            const u = UserStore.getUser(uid);
+            parts.push(RelationshipStore?.getNickname?.(uid), u?.globalName, u?.username);
+        });
+        return parts.filter(Boolean).join(" ").toLowerCase();
+    }
+
     unreadInfo(ids) {
         const RS = BdApi.Webpack.getStore("ReadStateStore");
         let unread = 0, mentions = 0;
@@ -210,7 +227,7 @@ module.exports = class DMFolders {
         });
     }
 
-    // picker: every DM with its picture + display name, click to add/remove
+    // picker: every DM with its picture + display name, click to add/remove, with a search bar
     openPicker(folderName) {
         const React = BdApi.React;
         const e = React.createElement;
@@ -223,21 +240,36 @@ module.exports = class DMFolders {
 
         const Picker = () => {
             const [, force] = React.useReducer(x => x + 1, 0);
-            const ids = BdApi.Webpack.getStore("PrivateChannelSortStore").getPrivateChannelIds();
-            return e("div", { style: { maxHeight: "340px", overflowY: "auto" } },
-                ids.map(id => {
-                    const info = self.getInfo(id);
-                    const inside = !!self.folders[folderName]?.includes(id);
-                    return e("div", {
-                        key: id,
-                        onClick: () => { self.toggleDM(folderName, id); force(); },
-                        style: { display: "flex", alignItems: "center", gap: "10px", padding: "6px 8px", cursor: "pointer", borderRadius: "6px", color: "#ffffff", background: inside ? "rgba(88,101,242,.2)" : "transparent" }
-                    },
-                        e(Avatar, { info }),
-                        e("span", { style: { flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, info.name),
-                        e("span", { style: { color: inside ? "#5865f2" : "#80848e", fontWeight: 700 } }, inside ? "✓" : "+")
-                    );
-                })
+            const [query, setQuery] = React.useState("");
+            const q = query.trim().toLowerCase();
+            const allIds = BdApi.Webpack.getStore("PrivateChannelSortStore").getPrivateChannelIds();
+            const ids = q ? allIds.filter(id => self.getSearchText(id).includes(q)) : allIds;
+
+            return e("div", null,
+                e("input", {
+                    value: query,
+                    autoFocus: true,
+                    placeholder: "Search by username, display name or nickname",
+                    style: { width: "100%", padding: "8px", marginBottom: "8px", boxSizing: "border-box", background: "#1e1f22", color: "#ffffff", border: "none", borderRadius: "4px" },
+                    onChange: ev => setQuery(ev.target.value)
+                }),
+                e("div", { style: { maxHeight: "300px", overflowY: "auto" } },
+                    ids.length === 0
+                        ? e("div", { style: { padding: "12px", color: "#80848e" } }, "No matches")
+                        : ids.map(id => {
+                            const info = self.getInfo(id);
+                            const inside = !!self.folders[folderName]?.includes(id);
+                            return e("div", {
+                                key: id,
+                                onClick: () => { self.toggleDM(folderName, id); force(); },
+                                style: { display: "flex", alignItems: "center", gap: "10px", padding: "6px 8px", cursor: "pointer", borderRadius: "6px", color: "#ffffff", background: inside ? "rgba(88,101,242,.2)" : "transparent" }
+                            },
+                                e(Avatar, { info }),
+                                e("span", { style: { flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, info.name),
+                                e("span", { style: { color: inside ? "#5865f2" : "#80848e", fontWeight: 700 } }, inside ? "✓" : "+")
+                            );
+                        })
+                )
             );
         };
 
@@ -264,13 +296,13 @@ module.exports = class DMFolders {
         const bar = document.createElement("div");
         bar.id = "dmf-bar";
         bar.style.cssText = "display:flex;flex-wrap:nowrap;gap:4px;padding:8px 8px 0;overflow-x:auto;overflow-y:hidden;border-bottom:1px solid #2b2d31;";
-// scroll the tabs sideways with the mouse wheel when they don't all fit
-bar.addEventListener("wheel", ev => {
-    if (bar.scrollWidth > bar.clientWidth && ev.deltaY) {
-        bar.scrollLeft += ev.deltaY;
-        ev.preventDefault();
-    }
-}, { passive: false });
+        // scroll the tabs sideways with the mouse wheel when they don't all fit
+        bar.addEventListener("wheel", ev => {
+            if (bar.scrollWidth > bar.clientWidth && ev.deltaY) {
+                bar.scrollLeft += ev.deltaY;
+                ev.preventDefault();
+            }
+        }, { passive: false });
 
         ["All", "Unread", ...Object.keys(this.folders)].forEach(name => {
             const b = document.createElement("button");
