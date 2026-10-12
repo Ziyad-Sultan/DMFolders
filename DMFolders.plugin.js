@@ -3,7 +3,7 @@
  * @author Ziyad Sultan
  * @authorLink https://github.com/Ziyad-Sultan
  * @description Organize your DMs into folders with unread badges
- * @version 3.1.0
+ * @version 3.2.0
  * @source https://github.com/Ziyad-Sultan/DMFolders
  */
 
@@ -324,6 +324,15 @@ module.exports = class DMFolders {
             };
             bar.append(b);
         });
+
+        // "+" at the end of the row: create a new folder
+        const plus = document.createElement("button");
+        plus.textContent = "+";
+        plus.title = "New folder";
+        plus.style.cssText = TAB_BASE + "font-size:18px;line-height:1;padding:4px 12px;";
+        plus.onclick = () => this.promptCreate();
+        bar.append(plus);
+
         return bar;
     }
 
@@ -331,7 +340,7 @@ module.exports = class DMFolders {
         const activeName = this.active ?? "All";
         const allIds = BdApi.Webpack.getStore("PrivateChannelSortStore")?.getPrivateChannelIds?.() ?? [];
 
-        document.querySelectorAll("#dmf-bar button").forEach(b => {
+        document.querySelectorAll("#dmf-bar button[data-tab]").forEach(b => {
             const name = b.dataset.tab;
             b.style.cssText = TAB_BASE + (name === activeName ? TAB_ACTIVE : "");
 
@@ -363,7 +372,7 @@ module.exports = class DMFolders {
         this.pinned?.clear();
     }
 
-    // pin everything above the DM rows, so only the DMs scroll under the tabs
+    // (only used when PIN_TOP is true) pin everything above the DM rows, so only the DMs scroll under the tabs
     layout() {
         const bar = document.getElementById("dmf-bar");
         const scroller = bar?.closest('[class*="scroller"]');
