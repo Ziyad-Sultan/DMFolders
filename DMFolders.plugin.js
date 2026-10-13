@@ -433,7 +433,7 @@ module.exports = class DMFolders {
         if (!firstDM) return;
 
         // keep the tab bar directly above the first DM
-        const anchor = document.getElementById("dma-row") ?? firstDM.el.closest("li") ?? firstDM.el;
+        const anchor = firstDM.el.closest("li") ?? firstDM.el;
         let bar = document.getElementById("dmf-bar");
         if (!bar) bar = this.makeBar();
         if (bar.nextElementSibling !== anchor) anchor.parentElement.insertBefore(bar, anchor);
